@@ -6,7 +6,7 @@ import pytest
 from modbus_connection import IllegalDataAddressError, ModbusTimeoutError
 from modbus_connection.mock import MockModbusUnit
 
-from sunsynk_modbus import InverterState, SunsynkInverter
+from sunsynk_modbus import BatteryMode, BatteryType, InverterState, SunsynkInverter
 
 
 async def test_real_inverter_snapshot(
@@ -113,3 +113,40 @@ def test_derived_values_are_none_before_a_poll(mock_modbus_unit: MockModbusUnit)
     assert inverter.readings.grid_connected is None
     assert inverter.readings.active_faults == []
     assert inverter.energy.total_grid_import is None
+
+
+async def test_battery_settings(
+    mock_modbus_unit: MockModbusUnit, sg01lp1_raw: dict[str, Any]
+) -> None:
+    mock_modbus_unit.load_raw(sg01lp1_raw)
+    inverter = SunsynkInverter(mock_modbus_unit)
+
+    await inverter.async_ensure_setup()
+
+    assert inverter.battery_settings.battery_type is BatteryType.LITHIUM
+    assert inverter.battery_settings.battery_mode is BatteryMode.CAPACITY
+    assert inverter.has_battery is True
+
+
+async def test_no_battery(mock_modbus_unit: MockModbusUnit, sg01lp1_raw: dict[str, Any]) -> None:
+    sg01lp1_raw["holding"]["213"] = 2
+    mock_modbus_unit.load_raw(sg01lp1_raw)
+    inverter = SunsynkInverter(mock_modbus_unit)
+
+    await inverter.async_ensure_setup()
+
+    assert inverter.battery_settings.battery_mode is BatteryMode.NO_BATTERY
+    assert inverter.has_battery is False
+
+
+async def test_battery_settings_not_served(
+    mock_modbus_unit: MockModbusUnit, sg01lp1_raw: dict[str, Any]
+) -> None:
+    mock_modbus_unit.load_raw(sg01lp1_raw)
+    mock_modbus_unit.fail_read(213, IllegalDataAddressError(0x03))
+    inverter = SunsynkInverter(mock_modbus_unit)
+
+    await inverter.async_ensure_setup()
+
+    assert inverter.battery_settings.battery_mode is None
+    assert inverter.has_battery is True

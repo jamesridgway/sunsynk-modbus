@@ -46,7 +46,13 @@ What each poll reads:
 - **`async_update_energy()`:** the daily and lifetime kWh counters.
 - **`async_update()`:** both.
 
-The identity (serial number and rated power) is read once, on the first poll.
+The identity (serial number and rated power) and the battery settings are read once, on the first poll.
+
+### Battery
+
+`inverter.has_battery` is `False` only when the battery mode of the inverter (register 213) is set to
+no battery. This is an installer setting: no register reports whether a battery is physically connected.
+If the inverter does not serve the setting, `has_battery` is `True`.
 
 ### Sign conventions
 
