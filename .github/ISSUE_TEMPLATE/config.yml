@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Problem with the Sunsynk integration in Home Assistant
+    url: https://github.com/home-assistant/core/issues/new?template=bug_report.yml
+    about: Report problems with the Sunsynk integration to Home Assistant Core. Use this form only for problems in this library.
